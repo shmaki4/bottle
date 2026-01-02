@@ -328,7 +328,7 @@ class Router:
 
     def add(self, rule, method, target, name=None):
         """ Add a new rule or replace the target for an existing rule. """
-        anons = 0  # Number of anonymous wildcards found
+        anons = []  # Generated names of anonymous wildcards
         keys = []  # Names of keys
         pattern = ''  # Regular expression pattern with named groups
         filters = []  # Lists of wildcard input filters
@@ -341,12 +341,10 @@ class Router:
                 if mode == 'default': mode = self.default_filter
                 mask, in_filter, out_filter = self.filters[mode](conf)
                 if not key:
-                    pattern += '(?:%s)' % mask
-                    key = 'anon%d' % anons
-                    anons += 1
-                else:
-                    pattern += '(?P<%s>%s)' % (key, mask)
-                    keys.append(key)
+                    key = 'anon%d' % len(anons)
+                    anons.append(key)
+                pattern += '(?P<%s>%s)' % (key, mask)
+                keys.append(key)
                 if in_filter: filters.append((key, in_filter))
                 builder.append((key, out_filter or str))
             elif key:
@@ -376,11 +374,16 @@ class Router:
                         url_args[name] = wildcard_filter(url_args[name])
                     except ValueError:
                         raise HTTPError(400, 'Path has wrong format.')
+                for key in anons:
+                    del url_args[key]
                 return url_args
         elif re_pattern.groupindex:
 
             def getargs(path):
-                return re_match(path).groupdict()
+                url_args = re_match(path).groupdict()
+                for key in anons:
+                    del url_args[key]
+                return url_args
         else:
             getargs = None
 

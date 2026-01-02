@@ -78,6 +78,11 @@ class TestRouter(unittest.TestCase):
         self.assertMatches('/<id:path>/:f', '/a/b', id='a', f='b')
         self.assertMatches('/<id:path>', '/a', id='a')
 
+    def testAnonWildcard(self):
+        self.assertMatches('/anon/<>', '/anon/whatever')
+        self.assertMatches('/anonfilter/<:int>', '/anonfilter/5')
+        self.assertRaises(bottle.HTTPError, self.match, '/anonfilter/noint')
+
     def testWildcardNames(self):
         self.assertMatches('/alpha/:abc', '/alpha/alpha', abc='alpha')
         self.assertMatches('/alnum/:md5', '/alnum/sha1', md5='sha1')
